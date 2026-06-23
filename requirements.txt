@@ -1,3 +1,10 @@
-Django>=5.2,<5.3
-Pillow>=10.0.0
-openpyxl>=3.1.0
+Django==5.2.15
+asgiref==3.11.1
+et_xmlfile==2.0.0
+openpyxl==3.1.5
+psycopg==3.3.4
+psycopg-binary==3.3.4
+python-dotenv==1.2.2
+sqlparse==0.5.5
+tzdata==2026.2
+gunicorn==23.0.0
