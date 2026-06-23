@@ -1,0 +1,31 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3 page-header-actions">
+  <div>
+    <h1 class="page-title mb-1">Novo disparo simulado</h1>
+    <p class="text-muted mb-0">Selecione uma lista e registre o envio em modo simulado até a conexão da API.</p>
+  </div>
+  <a class="btn btn-light" href="{% url 'disparos' %}">Voltar</a>
+</div>
+<div class="card p-4 user-form-card">
+  <form method="post">
+    {% csrf_token %}
+    <div class="row g-4">
+      <div class="col-md-5">
+        <label class="form-label fw-bold" for="{{ form.lista.id_for_label }}">Lista</label>
+        {{ form.lista }}
+        <div class="form-text">A lista é compartilhada com a equipe.</div>
+      </div>
+      <div class="col-12">
+        <label class="form-label fw-bold" for="{{ form.mensagem.id_for_label }}">Mensagem</label>
+        {{ form.mensagem }}
+      </div>
+    </div>
+    <hr class="mt-4">
+    <div class="d-flex justify-content-end gap-2 flex-wrap">
+      <a class="btn btn-light" href="{% url 'disparos' %}">Cancelar</a>
+      <button class="btn btn-primary">Enviar simulado</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

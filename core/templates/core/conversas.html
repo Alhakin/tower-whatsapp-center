@@ -1,0 +1,63 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+  <div>
+    <h1 class="page-title">{{ titulo }}</h1>
+    <p class="text-muted mb-0">Todos podem consultar. Apenas o responsável interage em atendimentos abertos.</p>
+  </div>
+  <a class="btn btn-primary" href="{% url 'conversa_nova' %}">Nova conversa</a>
+</div>
+
+<div class="card user-form-card p-4 mb-3">
+  <form method="get" class="row g-3 align-items-end">
+    <div class="col-md-5">
+      <label class="form-label">Pesquisar</label>
+      <input class="form-control" name="q" value="{{ busca }}" placeholder="Nome, telefone ou trecho da conversa">
+    </div>
+    {% if not finalizadas %}
+    <div class="col-md-4">
+      <label class="form-label">Filtro</label>
+      <select class="form-select" name="filtro">
+        <option value="" {% if not filtro %}selected{% endif %}>Todas abertas</option>
+        <option value="minhas" {% if filtro == 'minhas' %}selected{% endif %}>Minhas</option>
+        <option value="novas" {% if filtro == 'novas' %}selected{% endif %}>Novas mensagens</option>
+        <option value="atendimento" {% if filtro == 'atendimento' %}selected{% endif %}>Em atendimento</option>
+        <option value="aguardando" {% if filtro == 'aguardando' %}selected{% endif %}>Aguardando retorno</option>
+        <option value="transferencia" {% if filtro == 'transferencia' %}selected{% endif %}>Transferência solicitada</option>
+      </select>
+    </div>
+    {% endif %}
+    <div class="col-md-3 d-flex gap-2">
+      <button class="btn btn-primary">Filtrar</button>
+      <a class="btn btn-light" href="{% if finalizadas %}{% url 'conversas_finalizadas' %}{% else %}{% url 'conversas' %}{% endif %}">Limpar</a>
+    </div>
+  </form>
+  {% if not finalizadas %}
+  <div class="notification-strip mt-3">
+    <span>🔔 {{ total_nao_lidas|default:0 }} mensagens não lidas</span>
+    <span>🔁 {{ total_transferencias|default:0 }} transferências solicitadas</span>
+  </div>
+  {% endif %}
+</div>
+
+<div class="card p-3">
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead><tr><th>Contato</th><th>Telefone</th><th>Status</th><th>Responsável</th><th>Novas</th><th>Atualizada</th><th></th></tr></thead>
+      <tbody>
+      {% for c in conversas %}
+        <tr class="{% if c.nao_lidas %}table-row-unread{% endif %}">
+          <td><strong>{{ c.nome|default:c.telefone }}</strong></td>
+          <td>{{ c.telefone }}</td>
+          <td><span class="status-pill status-{{ c.status|lower }}">{{ c.get_status_display }}</span></td>
+          <td>{% if c.responsavel %}{{ c.responsavel.get_full_name|default:c.responsavel.username }}{% else %}-{% endif %}</td>
+          <td>{% if c.nao_lidas %}<span class="badge bg-danger">{{ c.nao_lidas }}</span>{% else %}-{% endif %}</td>
+          <td>{{ c.atualizada_em|date:'d/m/Y H:i' }}</td>
+          <td><a class="btn btn-sm btn-outline-primary" href="{% url 'conversa_detalhe' c.pk %}">Abrir</a></td>
+        </tr>
+      {% empty %}<tr><td colspan="7"><div class="empty-state">Nenhuma conversa encontrada.</div></td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

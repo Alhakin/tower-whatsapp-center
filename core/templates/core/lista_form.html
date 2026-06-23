@@ -1,0 +1,25 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3 page-header-actions">
+  <div>
+    <h1 class="page-title mb-1">Lista de contatos</h1>
+    <p class="text-muted mb-0">Cadastre ou edite uma lista compartilhada para uso da equipe.</p>
+  </div>
+  <a class="btn btn-light" href="{% url 'listas' %}">Voltar</a>
+</div>
+<div class="card p-4 user-form-card">
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-4">
+      <label class="form-label fw-bold" for="{{ form.nome.id_for_label }}">Nome da lista</label>
+      {{ form.nome }}
+      <div class="form-text">Exemplo: Motoristas Sul de Minas, Clientes SP, Parceiros Refrigerado.</div>
+    </div>
+    <hr>
+    <div class="d-flex justify-content-end gap-2 flex-wrap">
+      <a class="btn btn-light" href="{% url 'listas' %}">Cancelar</a>
+      <button class="btn btn-primary">Salvar lista</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

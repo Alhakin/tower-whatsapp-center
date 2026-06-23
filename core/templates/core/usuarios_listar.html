@@ -1,0 +1,32 @@
+{% extends 'core/base.html' %}
+{% block title %}Usuários - Tower WhatsApp Center{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+  <div>
+    <h3 class="page-title mb-1">Usuários e perfis</h3>
+    <div class="text-muted">Criação e manutenção dos acessos da equipe.</div>
+  </div>
+  <a class="btn btn-primary" href="{% url 'usuarios_criar' %}">Novo usuário</a>
+</div>
+<div class="card p-4">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead><tr><th>Usuário</th><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for u in usuarios %}
+        <tr>
+          <td class="fw-semibold">{{ u.username }}</td>
+          <td>{{ u.get_full_name|default:'-' }}</td>
+          <td>{{ u.email|default:'-' }}</td>
+          <td>{% if u.is_superuser or u.is_staff %}<span class="badge badge-tower">Administrador</span>{% else %}<span class="badge text-bg-secondary">Operador</span>{% endif %}</td>
+          <td>{% if u.is_active %}<span class="badge text-bg-success">Ativo</span>{% else %}<span class="badge text-bg-danger">Inativo</span>{% endif %}</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'usuarios_editar' u.pk %}">Editar</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6"><div class="empty-state">Nenhum usuário encontrado.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

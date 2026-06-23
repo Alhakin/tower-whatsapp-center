@@ -1,0 +1,35 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start page-header-actions mb-3">
+  <div>
+    <h1 class="page-title mb-1">Editar contato</h1>
+    <p class="text-muted mb-0">Atualize o nome e telefone usados na conversa e nas listas onde este contato já estiver incluído.</p>
+  </div>
+  <a class="btn btn-light" href="{% url 'conversa_detalhe' conversa.pk %}">Voltar</a>
+</div>
+
+<div class="card p-4 user-form-card">
+  <form method="post" class="row g-4">
+    {% csrf_token %}
+    <div class="col-md-6">
+      <label class="form-label fw-bold" for="{{ form.nome.id_for_label }}">Nome do contato</label>
+      {{ form.nome }}
+      <div class="form-text">Esse nome aparecerá na lista de conversas e nos contatos das listas vinculadas.</div>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label fw-bold" for="{{ form.telefone.id_for_label }}">Telefone</label>
+      {{ form.telefone }}
+      <div class="form-text">Use o número com DDD. Exemplo: 35999999999.</div>
+    </div>
+    <div class="col-12">
+      <div class="alert alert-info mb-0">
+        Ao salvar, o sistema também atualizará os contatos com este mesmo telefone nas listas onde ele já estiver cadastrado.
+      </div>
+    </div>
+    <div class="col-12 d-flex justify-content-end gap-2 border-top pt-4 mt-2">
+      <a class="btn btn-light" href="{% url 'conversa_detalhe' conversa.pk %}">Cancelar</a>
+      <button class="btn btn-primary">Salvar contato</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

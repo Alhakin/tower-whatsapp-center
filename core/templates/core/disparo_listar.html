@@ -1,0 +1,27 @@
+{% extends 'core/base.html' %}
+{% block title %}Disparos - Tower WhatsApp Center{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+  <div>
+    <h3 class="page-title mb-1">Histórico de disparos</h3>
+    <div class="text-muted">{% if is_admin %}Visualização geral dos disparos de todos os usuários.{% else %}Visualização dos seus disparos registrados.{% endif %}</div>
+  </div>
+  <a class="btn btn-primary" href="{% url 'disparo_criar' %}">Novo disparo</a>
+</div>
+<div class="card p-4">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead><tr><th>Data</th>{% if is_admin %}<th>Usuário</th>{% endif %}<th>Lista</th><th>Contatos</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for d in disparos %}
+        <tr>
+          <td>{{ d.criado_em|date:'d/m/Y H:i' }}</td>
+          {% if is_admin %}<td>{{ d.usuario.get_full_name|default:d.usuario.username }}</td>{% endif %}
+          <td class="fw-semibold">{{ d.lista.nome }}</td><td>{{ d.total_contatos }}</td><td><span class="badge badge-tower">{{ d.get_status_display }}</span></td>
+        </tr>
+        {% empty %}<tr><td colspan="5"><div class="empty-state">Nenhum disparo registrado.</div></td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

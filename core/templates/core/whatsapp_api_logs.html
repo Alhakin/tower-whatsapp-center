@@ -1,0 +1,35 @@
+{% extends 'core/base.html' %}
+{% block title %}Logs WhatsApp API{% endblock %}
+{% block content %}
+<div class="page-head d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="page-title mb-1">Logs da WhatsApp API</h1>
+    <p class="text-muted mb-0">Histórico técnico de configurações, testes, envios simulados e futuros eventos da Meta.</p>
+  </div>
+  <a class="btn btn-light" href="{% url 'whatsapp_api_config' %}">Voltar</a>
+</div>
+<div class="card card-soft internal-table-card">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead><tr><th>Data</th><th>Evento</th><th>Status</th><th>Destino</th><th>Resumo</th><th>Usuário</th></tr></thead>
+      <tbody>
+        {% for log in logs %}
+          <tr>
+            <td>{{ log.criado_em|date:'d/m/Y H:i' }}</td>
+            <td><strong>{{ log.get_evento_display }}</strong></td>
+            <td><span class="badge badge-tower">{{ log.get_status_display }}</span></td>
+            <td>{{ log.destino|default:'-' }}</td>
+            <td>
+              {{ log.resumo|default:'-' }}
+              {% if log.resposta %}<div class="text-muted small mt-1">{{ log.resposta|truncatechars:140 }}</div>{% endif %}
+            </td>
+            <td>{% if log.criado_por %}{{ log.criado_por.get_full_name|default:log.criado_por.username }}{% else %}-{% endif %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="empty-state">Nenhum log encontrado.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

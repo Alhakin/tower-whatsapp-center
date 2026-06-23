@@ -1,0 +1,54 @@
+{% extends 'core/base.html' %}
+{% block title %}Atendimentos finalizados - Tower WhatsApp Center{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+  <div>
+    <h3 class="page-title mb-1">Atendimentos finalizados</h3>
+    <div class="text-muted">Histórico de conversas encerradas, visível para toda a equipe.</div>
+  </div>
+  <a class="btn btn-outline-primary" href="{% url 'conversas_listar' %}">Conversas abertas</a>
+</div>
+
+<div class="card p-4 mb-4">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-md-5">
+      <label class="form-label">Buscar</label>
+      <input type="text" name="busca" value="{{ busca }}" class="form-control" placeholder="Nome ou telefone">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Responsável</label>
+      <select name="responsavel" class="form-select">
+        <option value="">Todos</option>
+        {% for u in usuarios %}
+          <option value="{{ u.pk }}" {% if responsavel_id == u.pk|stringformat:'s' %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+      <button class="btn btn-primary w-100">Filtrar</button>
+      <a class="btn btn-outline-primary" href="{% url 'conversas_finalizadas' %}">Limpar</a>
+    </div>
+  </form>
+</div>
+
+<div class="card p-4">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead><tr><th>Contato</th><th>Telefone</th><th>Responsável</th><th>Finalizado/Atualizado em</th><th></th></tr></thead>
+      <tbody>
+      {% for c in conversas %}
+        <tr>
+          <td>{{ c.titulo }}</td>
+          <td>{{ c.telefone }}</td>
+          <td>{% if c.responsavel %}{{ c.responsavel.get_full_name|default:c.responsavel.username }}{% else %}<span class="text-muted">Sem responsável</span>{% endif %}</td>
+          <td>{{ c.atualizada_em|date:'d/m/Y H:i' }}</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'conversa_detalhe' c.pk %}">Abrir histórico</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5"><div class="empty-state">Nenhum atendimento finalizado encontrado.</div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

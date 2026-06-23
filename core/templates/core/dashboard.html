@@ -1,0 +1,104 @@
+{% extends 'core/base.html' %}
+{% block title %}Início - Tower WhatsApp Center{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+  <div>
+    <h3 class="page-title mb-1">Bem-vindo, {{ user.get_full_name|default:user.username }}</h3>
+    <div class="text-muted">{% if admin_view %}Resumo geral da empresa e dos disparos de todos os usuários.{% else %}Resumo da sua utilização e acesso às listas compartilhadas da equipe.{% endif %}</div>
+  </div>
+  <span class="badge badge-tower rounded-pill px-3 py-2">{% if admin_view %}Administrador{% else %}Operador{% endif %}</span>
+</div>
+
+<div class="row g-3 mb-4">
+  {% if admin_view %}<div class="col-md-3"><div class="card metric-card p-4"><div class="metric-label">Usuários ativos</div><div class="metric-value">{{ usuarios_ativos }}</div></div></div>{% endif %}
+  <div class="col-md-3"><div class="card metric-card p-4"><div class="metric-label">Listas cadastradas</div><div class="metric-value">{{ listas_total }}</div></div></div>
+  <div class="col-md-3"><div class="card metric-card p-4"><div class="metric-label">Contatos cadastrados</div><div class="metric-value">{{ contatos_total|default:0 }}</div></div></div>
+  <div class="col-md-3"><div class="card metric-card p-4"><div class="metric-label">Mensagens enviadas</div><div class="metric-value">{% if admin_view %}{{ mensagens_mes }}{% else %}{{ meus_disparos }}{% endif %}</div></div></div>
+  <div class="col-md-3"><div class="card metric-card p-4"><div class="metric-label">Conversas abertas</div><div class="metric-value">{{ conversas_abertas_total|default:0 }}</div></div></div>
+  <div class="col-md-3"><div class="card metric-card p-4"><div class="metric-label">Não lidas</div><div class="metric-value">{{ nao_lidas_total|default:0 }}</div></div></div>
+  <div class="col-md-3"><div class="card metric-card p-4"><div class="metric-label">Transferências</div><div class="metric-value">{{ transferencias_pendentes|default:0 }}</div></div></div>
+</div>
+
+<div class="card p-4 mb-4 quick-actions">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <h5 class="mb-1">Ações rápidas</h5>
+      <div class="text-muted">As listas são compartilhadas para visualização e uso por toda a equipe.</div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-primary" href="{% url 'lista_nova' %}">Nova lista</a>
+      <a class="btn btn-outline-primary" href="{% url 'disparo_novo' %}">Novo disparo</a>
+      <a class="btn btn-outline-primary" href="{% url 'conversa_nova' %}">Nova conversa</a>
+      {% if admin_view %}<a class="btn btn-outline-primary" href="{% url 'usuario_novo' %}">Novo usuário</a>{% endif %}
+    </div>
+  </div>
+</div>
+
+{% if admin_view %}
+<div class="card p-4 mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">Ranking de utilização</h5>
+    <a class="btn btn-sm btn-outline-primary" href="{% url 'usuarios' %}">Gerenciar usuários</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead><tr><th>Usuário</th><th>Mensagens</th></tr></thead>
+      <tbody>
+      {% for r in ranking_usuarios %}
+        <tr><td>{{ r.usuario__first_name }} {{ r.usuario__last_name }}{% if not r.usuario__first_name and not r.usuario__last_name %}{{ r.usuario__username }}{% endif %}</td><td>{{ r.total }}</td></tr>
+      {% empty %}
+        <tr><td colspan="2"><div class="empty-state">Nenhuma mensagem registrada.</div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="card p-4 h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Conversas recentes</h5>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'conversas' %}">Ver conversas</a>
+      </div>
+      <div class="list-group list-group-flush">
+        {% for c in conversas_abertas %}
+          <a class="list-group-item list-group-item-action" href="{% url 'conversa_detalhe' c.pk %}">
+            <strong>{{ c.nome|default:c.telefone }}</strong>
+            <span class="badge badge-tower ms-1">{{ c.get_status_display }}</span>
+            {% if c.nao_lidas %}<span class="badge bg-danger ms-1">{{ c.nao_lidas }} novas</span>{% endif %}
+          </a>
+        {% empty %}
+          <div class="empty-state">Nenhuma conversa aberta.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card p-4 h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Últimos disparos{% if admin_view %} da empresa{% endif %}</h5>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'disparos' %}">Ver histórico</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead><tr><th>Data</th><th>Lista</th>{% if admin_view %}<th>Usuário</th>{% endif %}<th>Qtd.</th></tr></thead>
+          <tbody>
+          {% for d in ultimos_disparos %}
+            <tr>
+              <td>{{ d.criado_em|date:'d/m/Y H:i' }}</td>
+              <td>{% if d.lista %}{{ d.lista.nome }}{% else %}-{% endif %}</td>
+              {% if admin_view %}<td>{% if d.usuario %}{{ d.usuario.get_full_name|default:d.usuario.username }}{% else %}-{% endif %}</td>{% endif %}
+              <td>{{ d.quantidade }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4"><div class="empty-state">Nenhum disparo registrado.</div></td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

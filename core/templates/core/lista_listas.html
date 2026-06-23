@@ -1,0 +1,29 @@
+{% extends 'core/base.html' %}
+{% block title %}Listas - Tower WhatsApp Center{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+  <div>
+    <h3 class="page-title mb-1">Listas da equipe</h3>
+    <div class="text-muted">Todas as listas ficam visíveis e disponíveis para uso por todos os usuários.</div>
+  </div>
+  <a class="btn btn-primary" href="{% url 'lista_criar' %}">Nova lista</a>
+</div>
+<div class="card p-4">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead><tr><th>Nome</th><th>Criada por</th><th>Contatos</th><th>Criada em</th><th></th></tr></thead>
+      <tbody>
+        {% for lista in listas %}
+        <tr>
+          <td class="fw-semibold">{{ lista.nome }}</td>
+          <td>{{ lista.usuario.get_full_name|default:lista.usuario.username }}</td>
+          <td>{{ lista.total_contatos }}</td>
+          <td>{{ lista.criada_em|date:'d/m/Y H:i' }}</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'lista_detalhe' lista.pk %}">Abrir</a></td>
+        </tr>
+        {% empty %}<tr><td colspan="5"><div class="empty-state">Nenhuma lista criada.</div></td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

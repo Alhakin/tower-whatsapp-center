@@ -1,0 +1,202 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block content %}
+<div class="chat-app-shell">
+  <aside class="chat-list-panel">
+    <div class="chat-panel-title">
+      <h2>Conversas</h2>
+      <a class="btn btn-sm btn-outline-primary" href="{% url 'conversa_nova' %}">Nova</a>
+    </div>
+    <div class="chat-search-box">
+      <span>🔎</span>
+      <input type="text" id="sideChatSearch" placeholder="Pesquisar contato ou telefone...">
+    </div>
+    <div class="chat-list-tabs">
+      <a href="{% url 'conversas' %}">Abertas</a>
+      <a href="{% url 'conversas_finalizadas' %}">Finalizadas</a>
+    </div>
+    <div class="chat-list-scroll">
+      {% for c in conversas_menu %}
+        <a class="conversation-item {% if c.pk == conversa.pk %}active{% endif %}" href="{% url 'conversa_detalhe' c.pk %}">
+          <div class="conversation-avatar">{{ c.nome|default:c.telefone|slice:':1'|upper }}</div>
+          <div class="conversation-main">
+            <div class="conversation-line">
+              <strong>{{ c.nome|default:c.telefone }}</strong>
+              <span>{{ c.atualizada_em|date:'H:i' }}</span>
+            </div>
+            <div class="conversation-sub">
+              <span>{{ c.telefone }}</span>
+              {% if c.nao_lidas %}<b>{{ c.nao_lidas }}</b>{% endif %}
+            </div>
+            <div class="conversation-preview">
+              {% if c.responsavel %}Resp.: {{ c.responsavel.get_full_name|default:c.responsavel.username }}{% else %}Sem responsável{% endif %}
+            </div>
+          </div>
+        </a>
+      {% empty %}
+        <div class="empty-state">Nenhuma conversa encontrada.</div>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <section class="chat-center-panel">
+    <div class="chat-main-header">
+      <div class="chat-contact-block">
+        <div class="conversation-avatar large">{{ conversa.nome|default:conversa.telefone|slice:':1'|upper }}</div>
+        <div>
+          <h1>{{ conversa.nome|default:conversa.telefone }}</h1>
+          <p>{{ conversa.telefone }} · <span class="status-pill status-{{ conversa.status|lower }}">{{ conversa.get_status_display }}</span></p>
+        </div>
+      </div>
+      <div class="chat-header-actions">
+        {% if can_assume %}<a class="btn btn-outline-primary" href="{% url 'conversa_assumir' conversa.pk %}">Assumir</a>{% endif %}
+        {% if can_request_transfer %}<a class="btn btn-outline-primary" href="{% url 'conversa_solicitar_transferencia' conversa.pk %}">Solicitar transferência</a>{% endif %}
+        {% if can_interact %}
+          {% if conversa.status == 'FINALIZADA' %}<a class="btn btn-outline-primary" href="{% url 'conversa_reabrir' conversa.pk %}">Reabrir</a>{% else %}<a class="btn btn-outline-primary" href="{% url 'conversa_aguardar' conversa.pk %}">Aguardar retorno</a><a class="btn btn-outline-danger" href="{% url 'conversa_finalizar' conversa.pk %}">Finalizar</a>{% endif %}
+        {% elif conversa.status == 'FINALIZADA' %}<a class="btn btn-outline-primary" href="{% url 'conversa_reabrir' conversa.pk %}">Reabrir</a>{% endif %}
+        <a class="btn btn-light" href="{% url 'conversas' %}">Voltar</a>
+      </div>
+    </div>
+
+    {% if not can_interact and conversa.status != 'FINALIZADA' %}
+      <div class="chat-warning-line">
+        Este atendimento está com outro responsável. Você pode consultar o histórico e solicitar transferência.
+      </div>
+    {% endif %}
+
+    <div class="chat-message-area" id="chatScroll">
+      <div class="internal-banner">
+        <strong>🔒 Conversa interna controlada</strong>
+        <span>Notas internas e solicitações de transferência são visíveis apenas aos usuários da plataforma.</span>
+      </div>
+      <div class="chat-history whatsapp-style">
+        {% for m in conversa.mensagens.all %}
+          {% if m.texto|slice:':21' == '[SOLICITAÇÃO INTERNA]' %}
+            <div class="chat-bubble internal-note">
+              <div class="chat-meta">Nota interna{% if m.usuario %} · {{ m.usuario.get_full_name|default:m.usuario.username }}{% endif %} · {{ m.criada_em|date:'d/m/Y H:i' }}</div>
+              <div class="chat-text">{{ m.texto|linebreaksbr }}</div>
+            </div>
+          {% else %}
+            <div class="chat-bubble whatsapp {% if m.direcao == 'ENVIADA' %}sent{% else %}received{% endif %}">
+              <div class="chat-meta">{{ m.get_direcao_display }}{% if m.usuario %} por {{ m.usuario.get_full_name|default:m.usuario.username }}{% endif %} · {{ m.criada_em|date:'d/m/Y H:i' }}</div>
+              {% if m.texto %}<div class="chat-text">{{ m.texto|linebreaksbr }}</div>{% endif %}
+              {% if m.arquivo %}
+                <div class="attachment-box">
+                  {% if m.tipo == 'IMAGEM' %}<img class="chat-image" src="{{ m.arquivo.url }}" alt="{{ m.filename }}">{% endif %}
+                  {% if m.tipo == 'AUDIO' %}<audio controls src="{{ m.arquivo.url }}" class="wa-audio"></audio>{% endif %}
+                  {% if m.tipo == 'DOCUMENTO' %}<div class="doc-icon">📄 {{ m.filename }}</div>{% endif %}
+                  <div class="mt-2 d-flex gap-2 flex-wrap">
+                    <a class="btn btn-sm btn-outline-primary" href="{{ m.arquivo.url }}" target="_blank">Visualizar</a>
+                    <a class="btn btn-sm btn-primary" href="{{ m.arquivo.url }}" download>Baixar</a>
+                  </div>
+                </div>
+              {% endif %}
+              {% if m.direcao == 'ENVIADA' %}<div class="delivery-status status-delivery-{{ m.status_entrega|lower }}">{{ m.get_status_entrega_display }}</div>{% endif %}
+            </div>
+          {% endif %}
+        {% empty %}
+          <p class="empty-state">Ainda não há mensagens nesta conversa.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if can_interact %}
+      <form method="post" enctype="multipart/form-data" id="sendForm" class="wa-composer fixed-composer">
+        {% csrf_token %}
+        <input type="hidden" name="tipo" id="tipoEnvio" value="TEXTO">
+        <input type="file" name="arquivo" id="docInput" class="d-none" data-tipo="DOCUMENTO">
+        <input type="file" name="arquivo" id="mediaInput" class="d-none" accept="image/*,video/*" data-tipo="IMAGEM">
+        <input type="file" name="arquivo" id="audioFileInput" class="d-none" accept="audio/*" data-tipo="AUDIO">
+
+        <div class="attach-wrap">
+          <button type="button" class="wa-icon-btn" id="attachToggle" title="Anexar">＋</button>
+          <div class="attach-menu d-none" id="attachMenu">
+            <button type="button" data-target="docInput"><span>📄</span> Documento</button>
+            <button type="button" data-target="mediaInput"><span>🖼️</span> Fotos e vídeos</button>
+            <button type="button" data-target="audioFileInput"><span>🎧</span> Áudio</button>
+          </div>
+        </div>
+
+        <textarea name="texto" id="messageText" class="wa-message-input" rows="1" placeholder="Digite uma mensagem"></textarea>
+        <div class="selected-file d-none" id="selectedFile"></div>
+        <button type="submit" class="wa-send-btn" id="sendTextBtn" title="Enviar">➤</button>
+        <button type="button" class="wa-mic-btn" id="startRecord" title="Gravar áudio">🎙️</button>
+      </form>
+
+      <div class="wa-record-bar d-none" id="recordBar">
+        <button type="button" class="wa-cancel-record" id="cancelRecord">Cancelar</button>
+        <span id="recordingStatus">🔴 Gravando... 00:00</span>
+        <button type="button" class="wa-stop-record" id="stopRecord">⏹️ Parar</button>
+      </div>
+
+      <div class="wa-audio-preview d-none" id="audioPreviewBox">
+        <audio id="audioPreview" controls></audio>
+        <form method="post" enctype="multipart/form-data" id="audioForm" class="d-flex gap-2 align-items-center">
+          {% csrf_token %}
+          <input type="hidden" name="tipo" value="AUDIO">
+          <input type="hidden" name="texto" value="Áudio gravado pelo sistema">
+          <input type="file" name="audio_blob" id="audioBlobInput" class="d-none">
+          <button type="button" class="btn btn-light" id="discardAudio">Descartar</button>
+          <button class="btn btn-primary" id="sendAudio" type="submit">Enviar áudio</button>
+        </form>
+      </div>
+    {% else %}
+      <div class="composer-locked">Somente leitura. Solicite a transferência para responder.</div>
+    {% endif %}
+  </section>
+
+  <aside class="chat-info-panel">
+    <div class="info-card">
+      <h3>Contato</h3>
+      <p><strong>{{ conversa.nome|default:conversa.telefone }}</strong></p>
+      <p>{{ conversa.telefone }}</p>
+      <span class="status-pill status-{{ conversa.status|lower }}">{{ conversa.get_status_display }}</span>
+      {% if can_transfer %}
+        <a class="btn btn-outline-primary w-100 mt-3" href="{% url 'conversa_editar_contato' conversa.pk %}">Editar contato</a>
+      {% endif %}
+    </div>
+    <div class="info-card">
+      <h3>Responsável</h3>
+      <p>{% if conversa.responsavel %}{{ conversa.responsavel.get_full_name|default:conversa.responsavel.username }}{% else %}Sem responsável{% endif %}</p>
+      {% if can_transfer %}
+        <form method="post" action="{% url 'conversa_transferir' conversa.pk %}" class="d-grid gap-2">
+          {% csrf_token %}
+          <select name="responsavel" class="form-select" required>
+            {% for u in usuarios %}<option value="{{ u.pk }}">{{ u.get_full_name|default:u.username }}</option>{% endfor %}
+          </select>
+          <button class="btn btn-outline-primary">Transferir atendimento</button>
+        </form>
+      {% elif can_request_transfer %}
+        <a class="btn btn-outline-primary w-100" href="{% url 'conversa_solicitar_transferencia' conversa.pk %}">Solicitar transferência</a>
+      {% endif %}
+    </div>
+    <div class="info-card">
+      <h3>Informações</h3>
+      <p><strong>Primeiro contato</strong><br>{{ conversa.criada_em|date:'d/m/Y H:i' }}</p>
+      <p><strong>Última mensagem</strong><br>{{ conversa.atualizada_em|date:'d/m/Y H:i' }}</p>
+      <p><strong>Não lidas</strong><br>{{ conversa.nao_lidas }}</p>
+      <p><strong>Origem</strong><br>WhatsApp</p>
+    </div>
+    {% if can_interact %}
+      <details class="info-card receive-sim-details">
+        <summary>Simular recebimento da API</summary>
+        <form method="post" enctype="multipart/form-data" action="{% url 'simular_recebida' conversa.pk %}" class="d-grid gap-2 mt-3">
+          {% csrf_token %}
+          <select name="tipo" class="form-select"><option value="TEXTO">Texto</option><option value="IMAGEM">Imagem</option><option value="DOCUMENTO">Documento</option><option value="AUDIO">Áudio</option></select>
+          <input name="texto" class="form-control" placeholder="Mensagem recebida simulada.">
+          <input type="file" name="arquivo" class="form-control">
+          <button class="btn btn-outline-primary">Registrar recebida</button>
+        </form>
+      </details>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+{% if can_interact %}<script src="{% static 'core/js/audio_recorder.js' %}"></script>{% endif %}
+<script>
+const cs=document.getElementById('chatScroll'); if(cs){cs.scrollTop=cs.scrollHeight;}
+const sideSearch=document.getElementById('sideChatSearch');
+if(sideSearch){sideSearch.addEventListener('input',()=>{const q=sideSearch.value.toLowerCase();document.querySelectorAll('.conversation-item').forEach(i=>{i.style.display=i.innerText.toLowerCase().includes(q)?'flex':'none';});});}
+</script>
+{% endblock %}

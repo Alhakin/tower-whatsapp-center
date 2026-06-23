@@ -1,0 +1,5 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3 page-header-actions"><h1 class="page-title">Listas de contatos</h1><a class="btn btn-primary" href="{% url 'lista_nova' %}">Nova lista</a></div>
+<div class="card p-3"><table class="table"><thead><tr><th>Lista</th><th>Criada por</th><th>Contatos</th><th>Data</th><th></th></tr></thead><tbody>{% for l in listas %}<tr><td><strong>{{ l.nome }}</strong></td><td>{% if l.criada_por %}{{ l.criada_por.get_full_name|default:l.criada_por.username }}{% else %}-{% endif %}</td><td>{{ l.total }}</td><td>{{ l.criada_em|date:'d/m/Y H:i' }}</td><td><a class="btn btn-sm btn-outline-primary" href="{% url 'lista_detalhe' l.pk %}">Abrir</a></td></tr>{% empty %}<tr><td colspan="5">Nenhuma lista.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

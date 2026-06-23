@@ -1,0 +1,5 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3"><h1 class="page-title">Usuários</h1><a class="btn btn-primary" href="{% url 'usuario_novo' %}">Novo usuário</a></div>
+<div class="card p-3"><table class="table"><thead><tr><th>Nome</th><th>Usuário</th><th>E-mail</th><th>Ativo</th><th></th></tr></thead><tbody>{% for u in usuarios %}<tr><td>{{ u.get_full_name|default:'-' }}</td><td>{{ u.username }}</td><td>{{ u.email }}</td><td>{{ u.is_active|yesno:'Sim,Não' }}</td><td><a class="btn btn-sm btn-outline-primary" href="{% url 'usuario_editar' u.pk %}">Editar</a></td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

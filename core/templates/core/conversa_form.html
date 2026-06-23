@@ -1,0 +1,5 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<h1 class="page-title">Nova conversa</h1>
+<div class="card p-4"><form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn-primary">Salvar</button><a href="{% url 'conversas' %}" class="btn btn-light">Voltar</a></form></div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends 'core/base.html' %}
+{% block title %}Conversas - Tower WhatsApp Center{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+  <div>
+    <h3 class="page-title mb-1">Conversas</h3>
+    <div class="text-muted">Atendimentos recebidos e respostas enviadas em modo simulado.</div>
+  </div>
+  <a class="btn btn-primary" href="{% url 'conversa_criar' %}">Nova conversa</a>
+</div>
+
+<div class="card p-4 mb-4">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-md-5">
+      <label class="form-label">Buscar</label>
+      <input type="text" name="busca" value="{{ busca }}" class="form-control" placeholder="Nome ou telefone">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select">
+        <option value="">Todos</option>
+        <option value="ABERTA" {% if status == 'ABERTA' %}selected{% endif %}>Aberta</option>
+        <option value="EM_ATENDIMENTO" {% if status == 'EM_ATENDIMENTO' %}selected{% endif %}>Em atendimento</option>
+        <option value="FINALIZADA" {% if status == 'FINALIZADA' %}selected{% endif %}>Finalizada</option>
+      </select>
+    </div>
+    <div class="col-md-3 d-flex gap-2">
+      <button class="btn btn-primary w-100">Filtrar</button>
+      <a class="btn btn-outline-primary" href="{% url 'conversas_listar' %}">Limpar</a>
+    </div>
+  </form>
+</div>
+
+<div class="card p-4">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead><tr><th>Contato</th><th>Telefone</th><th>Responsável</th><th>Status</th><th>Última atualização</th><th></th></tr></thead>
+      <tbody>
+      {% for c in conversas %}
+        <tr>
+          <td>{{ c.titulo }}</td>
+          <td>{{ c.telefone }}</td>
+          <td>{% if c.responsavel %}{{ c.responsavel.get_full_name|default:c.responsavel.username }}{% else %}<span class="text-muted">Sem responsável</span>{% endif %}</td>
+          <td><span class="badge badge-tower">{{ c.get_status_display }}</span></td>
+          <td>{{ c.atualizada_em|date:'d/m/Y H:i' }}</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'conversa_detalhe' c.pk %}">Abrir</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6"><div class="empty-state">Nenhuma conversa encontrada.</div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

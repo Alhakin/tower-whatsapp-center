@@ -1,0 +1,112 @@
+{% extends 'core/base.html' %}
+{% block title %}WhatsApp API{% endblock %}
+{% block content %}
+<div class="page-head d-flex justify-content-between align-items-start mb-3">
+  <div>
+    <h1 class="page-title mb-1">WhatsApp API</h1>
+    <p class="text-muted mb-0">Configuração da conexão oficial Meta para o número fixo da empresa.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-primary" href="{% url 'whatsapp_api_logs' %}">Ver logs</a>
+    <a class="btn btn-light" href="{% url 'dashboard' %}">Voltar</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card card-soft internal-form-card">
+      <div class="card-body p-4">
+        <div class="api-status-panel mb-4">
+          <div>
+            <div class="metric-label">Conexão atual</div>
+            <h3 class="mb-1">{{ config.nome }}</h3>
+            <div class="text-muted">{{ config.numero }} · Phone Number ID: {{ config.phone_number_id }}</div>
+          </div>
+          <span class="api-status api-{{ config.status|lower }}">{{ config.get_status_display }}</span>
+        </div>
+
+        <form method="post">
+          {% csrf_token %}
+          <div class="row g-4">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Nome da conexão</label>
+              {{ form.nome }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Número WhatsApp</label>
+              {{ form.numero }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Phone Number ID</label>
+              {{ form.phone_number_id }}
+              <div class="form-text">Confirmado na Meta: 11239284241451517.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Status</label>
+              {{ form.status }}
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold">Access Token</label>
+              {{ form.access_token }}
+              <div class="form-text">Cole aqui o token permanente quando ele for gerado no Meta for Developers. Por enquanto pode ficar vazio.</div>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label fw-bold">URL do Webhook</label>
+              {{ form.webhook_url }}
+              <div class="form-text">Em teste local pode ficar vazio. Em produção precisará ser HTTPS.</div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Token de verificação do Webhook</label>
+              {{ form.webhook_verify_token }}
+            </div>
+            <div class="col-12">
+              <div class="form-check form-switch api-switch-box">
+                {{ form.ativo }}
+                <label class="form-check-label fw-bold" for="{{ form.ativo.id_for_label }}">Conexão ativa no sistema</label>
+              </div>
+            </div>
+          </div>
+          <hr class="my-4">
+          <div class="d-flex justify-content-end gap-2">
+            <a class="btn btn-outline-primary" href="{% url 'whatsapp_api_testar' %}">Testar configuração</a>
+            <button class="btn btn-primary">Salvar configuração</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card card-soft mb-4">
+      <div class="card-body p-4">
+        <h4 class="mb-3">Resumo da integração</h4>
+        <p><strong>Número:</strong><br>{{ config.numero }}</p>
+        <p><strong>Phone Number ID:</strong><br>{{ config.phone_number_id }}</p>
+        <p><strong>Token:</strong><br>{{ config.token_mascarado }}</p>
+        <p><strong>Webhook local:</strong><br><code>/api/whatsapp/webhook/</code></p>
+        <div class="alert alert-warning mb-0">
+          A verificação do número na Meta ainda precisa ser concluída para liberar o envio real.
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-soft">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="mb-0">Últimos logs</h4>
+          <a href="{% url 'whatsapp_api_logs' %}" class="small">ver todos</a>
+        </div>
+        {% for log in logs %}
+          <div class="api-log-mini">
+            <strong>{{ log.get_evento_display }}</strong> · {{ log.get_status_display }}<br>
+            <span>{{ log.criado_em|date:'d/m/Y H:i' }}</span><br>
+            <small>{{ log.resumo }}</small>
+          </div>
+        {% empty %}
+          <div class="empty-state">Nenhum log registrado ainda.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
