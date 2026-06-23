@@ -5,6 +5,8 @@ from django.db.models import Count, Sum, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
+import json
+from .webhook import processar_evento
 from .forms import UsuarioForm, ListaEnvioForm, ContatoListaForm, DisparoForm, ConversaForm, MensagemAnexoForm, WhatsAppConfigForm
 from .models import PerfilUsuario, ListaEnvio, ContatoLista, Disparo, Conversa, MensagemConversa, WhatsAppConfig, WhatsAppIntegrationLog
 
@@ -606,15 +608,42 @@ def whatsapp_api_testar(request):
 
 @csrf_exempt
 def whatsapp_webhook(request):
-    # Endpoint reservado para a Etapa 18.2.
-    # A Meta validará este endereço quando o sistema estiver publicado com HTTPS.
     from django.http import JsonResponse, HttpResponse
+
+    config = WhatsAppConfig.objects.filter(ativo=True).first()
+
     if request.method == 'GET':
         verify_token = request.GET.get('hub.verify_token')
         challenge = request.GET.get('hub.challenge')
-        config = WhatsAppConfig.objects.filter(ativo=True).first()
+
         if config and verify_token and verify_token == config.webhook_verify_token:
+            registrar_log_whatsapp(
+                evento='WEBHOOK',
+                status='SUCESSO',
+                resumo='Webhook validado pela Meta.',
+                payload='GET Validation',
+                resposta='Challenge retornado com sucesso.',
+                config=config
+            )
             return HttpResponse(challenge or '')
+
+        registrar_log_whatsapp(
+            evento='WEBHOOK',
+            status='FALHA',
+            resumo='Falha na validação do webhook.',
+            payload='GET Validation',
+            resposta='Verify token inválido.',
+            config=config
+        )
         return HttpResponse('Token de verificação inválido', status=403)
-    registrar_log_whatsapp(evento='WEBHOOK', status='SIMULADO', resumo='Webhook recebido em ambiente local/teste.', payload=str(request.body[:2000]), resposta='Recebido sem processamento real nesta etapa.')
-    return JsonResponse({'status': 'received', 'mode': 'local_test'})
+
+    if request.method == 'POST':
+        try:
+            payload = json.loads(request.body.decode('utf-8')) if request.body else {}
+        except Exception:
+            payload = {}
+
+        resultado = processar_evento(payload)
+        return JsonResponse(resultado)
+
+    return JsonResponse({'status': 'method_not_allowed'}, status=405)

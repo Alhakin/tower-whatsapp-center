@@ -1,11 +1,5 @@
-"""Camada reservada para a comunicação com a API oficial da Meta WhatsApp.
-
-Etapa 18.1: estrutura preparada, ainda em modo local/teste.
-Na Etapa 18.3, esta camada receberá chamadas reais usando o token permanente.
-"""
-
 from dataclasses import dataclass
-from typing import Optional
+import requests
 
 
 @dataclass
@@ -14,13 +8,63 @@ class WhatsAppSendResult:
     status: str
     message_id: str = ''
     error: str = ''
+    response_text: str = ''
 
 
 def enviar_texto(config, destino: str, texto: str) -> WhatsAppSendResult:
-    if not config or config.status != 'CONECTADO' or not config.access_token:
+    if not config or config.status != 'CONECTADO' or not config.access_token or not config.phone_number_id:
         return WhatsAppSendResult(
             success=False,
             status='SIMULADA',
-            error='Ambiente local/teste ou configuração incompleta. Nenhuma chamada foi feita à Meta.'
+            error='Configuração incompleta ou API ainda não conectada. Nenhuma chamada real foi feita à Meta.'
         )
-    return WhatsAppSendResult(success=False, status='FILA', error='Envio real será habilitado na Etapa 18.3.')
+
+    url = f"https://graph.facebook.com/v20.0/{config.phone_number_id}/messages"
+
+    headers = {
+        "Authorization": f"Bearer {config.access_token}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": destino,
+        "type": "text",
+        "text": {
+            "preview_url": False,
+            "body": texto,
+        },
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        data = response.json() if response.content else {}
+
+        if response.status_code in [200, 201]:
+            message_id = ''
+            try:
+                message_id = data.get("messages", [{}])[0].get("id", "")
+            except Exception:
+                message_id = ''
+
+            return WhatsAppSendResult(
+                success=True,
+                status='ENVIADA',
+                message_id=message_id,
+                response_text=str(data),
+            )
+
+        return WhatsAppSendResult(
+            success=False,
+            status='FALHA',
+            error=str(data),
+            response_text=str(data),
+        )
+
+    except Exception as e:
+        return WhatsAppSendResult(
+            success=False,
+            status='FALHA',
+            error=str(e),
+            response_text=str(e),
+        )
